@@ -453,6 +453,13 @@
             background: white;
         }
 
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: -5px;
+        }
+
         .whatsapp-order-btn {
             background: var(--whatsapp-color);
             color: white;
@@ -526,7 +533,7 @@
             <i class="fa-solid fa-search"></i>
         </div>
 
-        <!-- الأقسام (تتيح للزائر اختيار القسم فوراً) -->
+        <!-- الأقسام -->
         <div class="categories">
             <button class="cat-btn active" data-category="all">الكل</button>
             <button class="cat-btn" data-category="مستحضرات تجميل">مستحضرات تجميل</button>
@@ -628,7 +635,10 @@
                         <option value="عدسات">عدسات</option>
                     </select>
                     <input type="number" id="new-prod-price" placeholder="السعر (بالجنيه)">
-                    <input type="text" id="new-prod-img" placeholder="رابط الصورة (URL)">
+                    
+                    <label for="new-prod-img-file"><i class="fa-solid fa-image"></i> اختر صورة المنتج من الموبايل:</label>
+                    <input type="file" id="new-prod-img-file" accept="image/*">
+                    
                     <button class="confirm-add-btn" id="add-new-prod-btn">
                         <i class="fa-solid fa-plus"></i> حفظ المنتج في الكتالوج
                     </button>
@@ -651,7 +661,6 @@
         const WHATSAPP_NUMBER = "201227093936";
         const ADMIN_PASSWORD = "1234"; 
 
-        // المنتجات الأساسية (تشمل الأقسام الأربعة: مستحضرات تجميل، ميكاب، أدوات، عدسات)
         const defaultProducts = [
             { id: 1, name: "كريم مرطب للوجه بالهيالورونيك", category: "مستحضرات تجميل", price: 180, image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500&q=80" },
             { id: 2, name: "سيروم فيتامين سي للنضارة", category: "مستحضرات تجميل", price: 220, image: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=500&q=80" },
@@ -866,13 +875,27 @@
             const name = document.getElementById("new-prod-name").value.trim();
             const category = document.getElementById("new-prod-cat").value;
             const price = Number(document.getElementById("new-prod-price").value);
-            const image = document.getElementById("new-prod-img").value.trim() || "https://via.placeholder.com/300?text=Almasry+United";
+            const imageFileinput = document.getElementById("new-prod-img-file");
 
             if (!name || !price) {
                 alert("يرجى إدخال اسم المنتج والسعر!");
                 return;
             }
 
+            if (imageFileinput.files && imageFileinput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageBase64 = e.target.result;
+                    addProductToList(name, category, price, imageBase64);
+                };
+                reader.readAsDataURL(imageFileinput.files[0]);
+            } else {
+                // صورة افتراضية لو لم يتم اختيار صورة
+                addProductToList(name, category, price, "https://via.placeholder.com/300?text=Almasry+United");
+            }
+        });
+
+        function addProductToList(name, category, price, image) {
             const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
             products.unshift({ id: newId, name, category, price, image });
             
@@ -882,9 +905,9 @@
 
             document.getElementById("new-prod-name").value = "";
             document.getElementById("new-prod-price").value = "";
-            document.getElementById("new-prod-img").value = "";
-            alert("تمت إضافة المنتج بنجاح!");
-        });
+            document.getElementById("new-prod-img-file").value = "";
+            alert("تمت إضافة المنتج بنجاح مع صورته!");
+        }
 
         function deleteProduct(id) {
             if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
