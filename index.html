@@ -678,10 +678,11 @@
             { id: 14, name: "محلول عدسات معقم ومطهر", category: "عدسات", price: 75, image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500&q=80" }
         ];
 
-        let products = JSON.parse(localStorage.getItem("almasry_products")) || defaultProducts;
+        // استخدام مفتاح الإصدار v2 لتجنب بيانات الذاكرة القديمة وتحديث الكتالوج فوراً
+        let products = JSON.parse(localStorage.getItem("almasry_products_v2")) || defaultProducts;
 
         function saveProductsToStorage() {
-            localStorage.setItem("almasry_products", JSON.stringify(products));
+            localStorage.setItem("almasry_products_v2", JSON.stringify(products));
         }
 
         let cart = [];
@@ -879,6 +880,80 @@
                 renderProducts();
             }
         };
+
+        // دالة ضغط وتصغير الصورة تلقائياً لتكون خفيفة وصغيرة الحجم
+        function compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxWidth = 400; 
+                    const scale = maxWidth / img.width;
+                    canvas.width = scale < 1 ? maxWidth : img.width;
+                    canvas.height = scale < 1 ? img.height * scale : img.height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                    callback(compressedDataUrl);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // زر إضافة منتج جديد من لوحة التحكم مع تفعيل الحفظ الفوري
+        document.getElementById("add-new-prod-btn").addEventListener("click", () => {
+            const name = document.getElementById("new-prod-name").value.trim();
+            const category = document.getElementById("new-prod-cat").value;
+            const price = parseFloat(document.getElementById("new-prod-price").value);
+            const fileInput = document.getElementById("new-prod-img-file");
+
+            if (!name || isNaN(price)) {
+                alert("من فضلك أدخل اسم المنتج والسعر بشكل صحيح!");
+                return;
+            }
+
+            if (fileInput.files && fileInput.files[0]) {
+                compressImage(fileInput.files[0], function(compressedImage) {
+                    saveNewProduct(name, category, price, compressedImage);
+                });
+            } else {
+                saveNewProduct(name, category, price, "https://via.placeholder.com/300?text=Almasry+United");
+            }
+        });
+
+        function saveNewProduct(name, category, price, image) {
+            const newProduct = {
+                id: Date.now(),
+                name: name,
+                category: category,
+                price: price,
+                image: image
+            };
+
+            products.push(newProduct);
+            saveProductsToStorage();
+            renderProducts();
+            renderAdminList();
+
+            document.getElementById("new-prod-name").value = "";
+            document.getElementById("new-prod-price").value = "";
+            document.getElementById("new-prod-img-file").value = "";
+            alert("تم إضافة المنتج وعرضه في الكتالوج بنجاح! 🌸");
+        }
+
+        // زر نسخ القائمة المحدثة (للتحديث الدائم على GitHub)
+        document.getElementById("copy-updated-code-btn").addEventListener("click", () => {
+            const codeText = JSON.stringify(products, null, 4);
+            navigator.clipboard.writeText(codeText).then(() => {
+                alert("تم نسخ مصفوفة المنتجات بنجاح!");
+            }).catch(err => {
+                alert("فشل النسخ التلقائي.");
+            });
+        });
 
         // تشغيل العرض عند تحميل الصفحة
         renderProducts();
