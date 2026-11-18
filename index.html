@@ -678,7 +678,7 @@
             { id: 14, name: "محلول عدسات معقم ومطهر", category: "عدسات", price: 75, image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500&q=80" }
         ];
 
-        // استخدام مفتاح الإصدار v2 لتجنب بيانات الذاكرة القديمة وتحديث الكتالوج فوراً
+        // استخدام مفتاح الإصدار v2 لتجنب تضارب التخزين المحلي القديم
         let products = JSON.parse(localStorage.getItem("almasry_products_v2")) || defaultProducts;
 
         function saveProductsToStorage() {
@@ -881,7 +881,7 @@
             }
         };
 
-        // دالة ضغط وتصغير الصورة تلقائياً لتكون خفيفة وصغيرة الحجم
+        // دالة ضغط وتصغير الصورة تلقائياً لتوفر مساحة التخزين وتمنع بطء الموقع
         function compressImage(file, callback) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -904,15 +904,26 @@
             reader.readAsDataURL(file);
         }
 
-        // زر إضافة منتج جديد من لوحة التحكم مع تفعيل الحفظ الفوري
+        // زر إضافة منتج جديد مع التحقق الكامل من البيانات والحفظ الفوري
         document.getElementById("add-new-prod-btn").addEventListener("click", () => {
-            const name = document.getElementById("new-prod-name").value.trim();
-            const category = document.getElementById("new-prod-cat").value;
-            const price = parseFloat(document.getElementById("new-prod-price").value);
+            const nameInput = document.getElementById("new-prod-name");
+            const priceInput = document.getElementById("new-prod-price");
+            const categorySelect = document.getElementById("new-prod-cat");
             const fileInput = document.getElementById("new-prod-img-file");
 
-            if (!name || isNaN(price)) {
-                alert("من فضلك أدخل اسم المنتج والسعر بشكل صحيح!");
+            const name = nameInput.value.trim();
+            const category = categorySelect.value;
+            const price = parseFloat(priceInput.value);
+
+            if (!name) {
+                alert("من فضلك أدخل اسم المنتج!");
+                nameInput.focus();
+                return;
+            }
+
+            if (isNaN(price) || price <= 0) {
+                alert("من فضلك أدخل سعراً صحيحاً للمنتج!");
+                priceInput.focus();
                 return;
             }
 
@@ -942,10 +953,11 @@
             document.getElementById("new-prod-name").value = "";
             document.getElementById("new-prod-price").value = "";
             document.getElementById("new-prod-img-file").value = "";
-            alert("تم إضافة المنتج وعرضه في الكتالوج بنجاح! 🌸");
+
+            alert("تم حفظ المنتج بنجاح وظهر في الكتالوج فوراً! 🎉");
         }
 
-        // زر نسخ القائمة المحدثة (للتحديث الدائم على GitHub)
+        // زر نسخ القائمة المحدثة (لتحديث الكود الأصلي على GitHub)
         document.getElementById("copy-updated-code-btn").addEventListener("click", () => {
             const codeText = JSON.stringify(products, null, 4);
             navigator.clipboard.writeText(codeText).then(() => {
@@ -955,7 +967,7 @@
             });
         });
 
-        // تشغيل العرض عند تحميل الصفحة
+        // تشغيل عرض المنتجات عند تحميل الصفحة
         renderProducts();
     </script>
 </body>
